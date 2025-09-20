@@ -24,36 +24,37 @@ The design is **FPGA-prototyped** and can be implemented as an **ASIC using the 
 
 ## System Architecture
 
-        +-------------------+
-        |   Microwatt CPU   |
-        | OS/RTOS + AI Coord|
-        +--------+----------+
-                 |
-                 v
-      +----------+-----------+
-      |                      |
-+------------------+   +---------------------------+
-| Camera Module    |   | Environmental Sensors     |
-| - Crowd Density  |   | - Temperature             |
-|   Estimation CNN |   | - Air Quality (CO₂, PM2.5)|
-|                  |   | - Noise Level             |
-|                  |   | - Vibration Sensor        |
-+------------------+   +---------------------------+
-                 \          /
-                  \        /
-                   v      v
+       ## System Architecture
+
+```text
+     +-------------------+
+     |   Microwatt CPU   |
+     | OS/RTOS + AI Coord|
+     +-------------------+
+              |
+              v
+     +-------------------+      +-----------------------+
+     |   Camera Module   |      |  Environmental Sensors|
+     | - Crowd Density   |      | - Temperature         |
+     | - Estimation CNN  |      | - Air Quality (CO₂, PM2.5)
+     |                   |      | - Noise Level         |
+     |                   |      | - Vibration Sensor    |
+     +-------------------+      +-----------------------+
+              |                          |
+              +-----------+  +-----------+
+                          v  v
                  +-------------------+
                  | Local AI Inference|
                  | - Tiny CNN/LSTM   |
-                 +--------+----------+
+                 +-------------------+
                           |
                           v
-                 +-------------------------+
-                 | Alert Generation &      |
-                 | Logging                 |
-                 | - Event Filtering       |
-                 | - Secure Transmission   |
-                 +-------------------------+
+                 +---------------------------+
+                 | Alert Generation & Logging|
+                 | - Event Filtering         |
+                 | - Secure Transmission     |
+                 +---------------------------+
+```
 
 ## Edge Node Features & Why Microwatt is Applicable
 
