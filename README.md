@@ -1,75 +1,134 @@
-# OpenFrame Overview
+# AI-Powered Smart Public Safety & Environmental Monitoring Node
 
-The OpenFrame Project provides an empty harness chip that differs significantly from the Caravel and Caravan designs. Unlike Caravel and Caravan, which include integrated SoCs and additional features, OpenFrame offers only the essential padframe, providing users with a clean slate for their custom designs.
+## Overview
 
-<img width="256" alt="Screenshot 2024-06-24 at 12 53 39 PM" src="https://github.com/efabless/openframe_timer_example/assets/67271180/ff58b58b-b9c8-4d5e-b9bc-bf344355fa80">
+This project implements an **edge computing node** for public safety and environmental monitoring using the **open-source POWER CPU core Microwatt**. The node combines 
+**video-based crowd density estimation** with **environmental sensor fusion** (temperature, air quality, noise, vibration) and runs lightweight AI models locally for **real-time alert generation**.
 
-## Key Characteristics of OpenFrame
+The design is **FPGA-prototyped** and can be implemented as an **ASIC using the Sky130 PDK** with available standard cells.
 
-1. **Minimalist Design:** 
-   - No integrated SoC or additional circuitry.
-   - Only includes the padframe, a power-on-reset circuit, and a digital ROM containing the 32-bit project ID.
-
-2. **Padframe Compatibility:**
-   - The padframe design and pin placements match those of the Caravel and Caravan chips, ensuring compatibility and ease of transition between designs.
-   - Pin types are identical, with power and ground pins positioned similarly and the same power domains available.
-
-3. **Flexibility:**
-   - Provides full access to all GPIO controls.
-   - Maximizes the user project area, allowing for greater customization and integration of alternative SoCs or user-specific projects at the same hierarchy level.
-
-4. **Simplified I/O:**
-   - Pins that previously connected to CPU functions (e.g., flash controller interface, SPI interface, UART) are now repurposed as general-purpose I/O, offering flexibility for various applications.
-
-The OpenFrame harness is ideal for those looking to implement custom SoCs or integrate user projects without the constraints of an existing SoC.
+---
 
 ## Features
 
-1. 44 configurable GPIOs.
-2. User area of approximately 15mm².
-3. Supports digital, analog, or mixed-signal designs.
+- **Crowd Density Monitoring:** Uses a camera module and lightweight CNN models to estimate crowd density in public spaces.
+- **Environmental Sensor Fusion:** Aggregates temperature, air quality, noise, and vibration sensors to detect anomalies and hazards.
+- **Local AI Inference:** TinyML models run on Microwatt (or optional FPGA co-processor) for low-latency decision-making.
+- **Secure Alerts:** Edge node generates real-time alerts and transmits securely via Ethernet/Wi-Fi/LoRa.
+- **Low-Power Design:** Suitable for remote deployment with battery or solar power.
+- **Open-Source & Auditability:** Fully open-source hardware and software stack.
 
-# openframe_timer_example
+---
 
-This example implements a simple timer and connects it to the GPIOs.
+## System Architecture
 
-## Installation and Setup
+        +-------------------+
+        |   Microwatt CPU   |
+        | OS/RTOS + AI Coord|
+        +--------+----------+
+                 |
+                 v
+      +----------+-----------+
+      |                      |
++------------------+   +---------------------------+
+| Camera Module    |   | Environmental Sensors     |
+| - Crowd Density  |   | - Temperature             |
+|   Estimation CNN |   | - Air Quality (CO₂, PM2.5)|
+|                  |   | - Noise Level             |
+|                  |   | - Vibration Sensor        |
++------------------+   +---------------------------+
+                 \          /
+                  \        /
+                   v      v
+                 +-------------------+
+                 | Local AI Inference|
+                 | - Tiny CNN/LSTM   |
+                 +--------+----------+
+                          |
+                          v
+                 +-------------------------+
+                 | Alert Generation &      |
+                 | Logging                 |
+                 | - Event Filtering       |
+                 | - Secure Transmission   |
+                 +-------------------------+
 
-First, clone the repository:
+## Edge Node Features & Why Microwatt is Applicable
 
-```bash
-git clone https://github.com/efabless/openframe_timer_example.git
-cd openframe_timer_example
-```
+The following table highlights the main features of the edge node and explains why the Microwatt CPU core is particularly suitable for this application.”
 
-Then, download all dependencies:
 
-```bash
-make setup
-```
+| Feature                                    | Why Microwatt is Suitable                                                                 |
+|-------------------------------------------|-------------------------------------------------------------------------------------------|
+| **Low-latency decision-making**            | Microwatt’s simple, low-power design enables fast local AI inference at the edge.        |
+| **Secure real-time alerts**                | Open-source core allows customized security protocols and full control over communication.|
+| **Autonomous operation during outages**    | Lightweight CPU can run a minimal RTOS or embedded Linux, processing data locally even without network connectivity. |
+| **Scalable deployment**                    | Small footprint and low power make it cost-effective to deploy multiple nodes across public spaces. |
 
-## Hardening the Design
+## Implementation
 
-In this example, we will harden the timer. You will need to harden your own design similarly.
+### FPGA Prototype
 
-```bash
-make user_proj_timer
-```
+- **Tools:** GHDL / Verilator for RTL simulation.
+- **Target FPGA** 
+- **Components:** Microwatt CPU core, sensor interface modules, optional AI accelerator.
+- **Testing:** Validate sensor readouts, AI inference, and communication logic.
 
-Once you have hardened your design, integrate it into the OpenFrame wrapper:
+### ASIC Implementation
 
-```bash
-make openframe_project_wrapper
-```
+- **Technology:** Sky130 PDK
+- **Flow:** OpenLane.
+- **Components:** Microwatt CPU, sensor interfaces, memory, AI accelerator, secure communication module.
+- **Constraints:** Standard cell libraries only; low-power edge deployment.
 
-## Important Notes
+---
 
-1. **Connecting to Power:**
-   - Ensure your design is connected to power using the power pins on the wrapper.
-   - Use the `vccd1_connection` and `vssd1_connection` macros, which contain the necessary vias and nets for power connections.
+## Software Stack
 
-2. **Flattening the Design:**
-   - If you plan to flatten your design within the `openframe_project_wrapper`, do not buffer the analog pins using standard cells.
+- Minimal Linux or RTOS running on Microwatt.
+- TinyML framework (MicroTVM or equivalent) for AI inference.
+- Local processing for crowd density estimation and environmental anomaly detection.
+- Alert generation module with secure communication.
 
-3. **Running Custom Steps:**
-   - Execute the custom step in OpenLane that copies the power pins from the template DEF. If this step is skipped, the precheck will fail, and your design will not be powered.
+---
+
+## Usage
+
+1. **FPGA Simulation / Testing:**  
+   - Run RTL simulations using GHDL or Verilator.  
+   - Load design onto FPGA and test sensor integration and AI inference.
+
+2. **Deploy ASIC Version:**  
+   - Synthesize design in Sky130 using OpenLane.  
+   - Integrate sensors and communication modules for a fully functional edge node.
+
+3. **Monitoring & Alerts:**  
+   - View real-time sensor data and AI predictions via secure dashboard.  
+   - Receive alerts for crowd density threshold breaches or environmental hazards.
+
+---
+
+## Dependencies
+
+- **Hardware:** Camera module, temperature, air quality, noise, and vibration sensors.  
+- **FPGA Tools:** GHDL, Verilator, Yosys, NextPNR.  
+- **ASIC Tools:** OpenLane, Sky130 PDK, standard cell libraries.  
+- **Software:** Linux/RTOS for Microwatt, TinyML frameworks for AI models.
+
+---
+
+## Contributors
+
+- Karthika G S.
+
+---
+
+## References
+
+1. [Microwatt OpenPOWER Core](https://git.openpower.foundation/cores/microwatt)  
+2. [Sky130 PDK](https://skywater-pdk.readthedocs.io/)  
+3. TinyML / MicroTVM frameworks for embedded AI  
+4. Crowd density and environmental sensor fusion research papers
+
+                 
+
